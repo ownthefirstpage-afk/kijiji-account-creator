@@ -3,13 +3,9 @@
 // Uses Playwright for browser automation and IMAP for email verification
 
 const express = require('express');
-const { chromium } = require('playwright-extra');
-const stealth = require('puppeteer-extra-plugin-stealth')();
+const { chromium } = require('playwright');
 const Imap = require('imap');
 const { simpleParser } = require('mailparser');
-
-// Add stealth plugin
-chromium.use(stealth);
 
 const app = express();
 app.use(express.json());
@@ -199,70 +195,145 @@ async function createKijijiAccount(browser, account, accountNum, total) {
   const page = await context.newPage();
 
   try {
-    // Step 1: Go to Kijiji registration with longer timeout and retry
-    let retries = 3;
-    while (retries > 0) {
-      try {
-        await page.goto('https://www.kijiji.ca/register/personal', { 
-          waitUntil: 'domcontentloaded', 
-          timeout: 60000 
-        });
-        break;
-      } catch(e) {
-        retries--;
-        if (retries === 0) throw e;
-        console.log(`[${accountNum}/${total}] Retry navigation... (${retries} left)`);
-        await page.waitForTimeout(2000);
-      }
+    // Step 0: Browse like a human BEFORE going to signup
+    console.log(`[${accountNum}/${total}] Browsing Kijiji homepage first...`);
+    
+    // Visit homepage
+    await page.goto('https://www.kijiji.ca/', { 
+      waitUntil: 'domcontentloaded', 
+      timeout: 60000 
+    });
+    await page.waitForTimeout(Math.random() * 3000 + 2000); // 2-5 sec
+    
+    // Scroll down slowly
+    await page.mouse.move(400, 300);
+    await page.waitForTimeout(1000);
+    await page.evaluate(() => window.scrollBy(0, 300));
+    await page.waitForTimeout(Math.random() * 2000 + 1000);
+    
+    // Move mouse around like reading
+    for (let i = 0; i < 3; i++) {
+      await page.mouse.move(
+        Math.random() * 800 + 200, 
+        Math.random() * 400 + 200,
+        { steps: 10 } // curved movement
+      );
+      await page.waitForTimeout(Math.random() * 1500 + 500);
     }
-    await page.waitForTimeout(3000);
+    
+    // Scroll back up
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.waitForTimeout(Math.random() * 1000 + 500);
+    
+    // NOW navigate to signup
+    console.log(`[${accountNum}/${total}] Navigating to signup...`);
+    await page.goto('https://www.kijiji.ca/register/personal', { 
+      waitUntil: 'domcontentloaded', 
+      timeout: 60000 
+    });
+    await page.waitForTimeout(Math.random() * 4000 + 3000); // 3-7 sec "reading the form"
 
-    // Step 2: Fill registration form with EXACT IDs and HUMAN-LIKE behavior
+    // Step 2: Fill registration form ULTRA-REALISTICALLY
     console.log(`[${accountNum}/${total}] Filling registration form...`);
 
-    // Helper: Type like a human
-    async function humanType(selector, text) {
+    // Helper: Type like a real human with mistakes
+    async function ultraHumanType(selector, text) {
       await page.click(selector);
-      await page.waitForTimeout(Math.random() * 300 + 100);
-      for (const char of text) {
+      await page.waitForTimeout(Math.random() * 500 + 300); // Think before typing
+      
+      for (let i = 0; i < text.length; i++) {
+        const char = text[i];
         await page.keyboard.type(char);
-        await page.waitForTimeout(Math.random() * 150 + 50); // 50-200ms per char
+        
+        // Variable typing speed - faster for common letters, slower for numbers/symbols
+        let delay;
+        if (/[a-z]/i.test(char)) {
+          delay = Math.random() * 120 + 60; // 60-180ms for letters
+        } else if (/[0-9]/.test(char)) {
+          delay = Math.random() * 200 + 150; // 150-350ms for numbers
+        } else {
+          delay = Math.random() * 250 + 200; // 200-450ms for symbols
+        }
+        
+        // Random pause mid-word (thinking/distraction)
+        if (Math.random() < 0.1 && i > 2) {
+          delay += Math.random() * 1000 + 500;
+        }
+        
+        await page.waitForTimeout(delay);
       }
     }
 
-    // Full name - ID: name
-    await humanType('#name', `${username.split('.')[0]} ${username.split('.')[1]}`);
+    // Move mouse to name field area first (like looking at it)
+    await page.mouse.move(500, 200, { steps: 15 });
     await page.waitForTimeout(Math.random() * 800 + 400);
 
-    // Email - ID: email
-    await humanType('#email', email);
-    await page.waitForTimeout(Math.random() * 800 + 400);
+    // Full name
+    console.log(`[${accountNum}/${total}] Typing name...`);
+    await ultraHumanType('#name', `${username.split('.')[0]} ${username.split('.')[1]}`);
+    await page.waitForTimeout(Math.random() * 1500 + 1000); // 1-2.5s pause
 
-    // Password - ID: new_password
-    await humanType('#new_password', password);
-    await page.waitForTimeout(Math.random() * 800 + 400);
-
-    // Confirm password - ID: reenter_password
-    await humanType('#reenter_password', password);
-    await page.waitForTimeout(Math.random() * 800 + 400);
-
-    // Move mouse around a bit
-    await page.mouse.move(Math.random() * 500 + 200, Math.random() * 300 + 100);
-    await page.waitForTimeout(Math.random() * 500 + 300);
-
-    // Check both checkboxes by ID with longer timeout
-    await page.click('#terms_of_use', { timeout: 30000, force: true });
+    // Move mouse to email field
+    await page.mouse.move(500, 280, { steps: 12 });
     await page.waitForTimeout(Math.random() * 600 + 300);
-    
-    await page.mouse.move(Math.random() * 500 + 200, Math.random() * 300 + 200);
+
+    // Email
+    console.log(`[${accountNum}/${total}] Typing email...`);
+    await ultraHumanType('#email', email);
+    await page.waitForTimeout(Math.random() * 1500 + 1000);
+
+    // Move mouse to password field
+    await page.mouse.move(500, 360, { steps: 10 });
+    await page.waitForTimeout(Math.random() * 600 + 400);
+
+    // Password
+    console.log(`[${accountNum}/${total}] Typing password...`);
+    await ultraHumanType('#new_password', password);
+    await page.waitForTimeout(Math.random() * 1000 + 800);
+
+    // Move to confirm password
+    await page.mouse.move(500, 440, { steps: 8 });
     await page.waitForTimeout(Math.random() * 400 + 200);
+
+    // Confirm password
+    console.log(`[${accountNum}/${total}] Confirming password...`);
+    await ultraHumanType('#reenter_password', password);
+    await page.waitForTimeout(Math.random() * 2000 + 1500); // Longer pause after passwords
+
+    // Scroll down to see checkboxes (like a real person would)
+    await page.evaluate(() => window.scrollBy(0, 200));
+    await page.waitForTimeout(Math.random() * 1000 + 500);
+
+    // Move mouse around reading terms
+    await page.mouse.move(400, 600, { steps: 20 });
+    await page.waitForTimeout(Math.random() * 2000 + 1000);
+    await page.mouse.move(600, 650, { steps: 15 });
+    await page.waitForTimeout(Math.random() * 1500 + 1000);
+
+    // Click first checkbox
+    console.log(`[${accountNum}/${total}] Checking terms...`);
+    await page.mouse.move(165, 688, { steps: 10 }); // Move to checkbox area
+    await page.waitForTimeout(300);
+    await page.click('#terms_of_use', { timeout: 30000 });
+    await page.waitForTimeout(Math.random() * 1000 + 600);
     
-    await page.click('#privacy_policy', { timeout: 30000, force: true });
-    await page.waitForTimeout(Math.random() * 800 + 400);
+    // Read privacy policy area
+    await page.mouse.move(400, 750, { steps: 12 });
+    await page.waitForTimeout(Math.random() * 1500 + 1000);
+    
+    // Click second checkbox
+    await page.mouse.move(165, 744, { steps: 8 });
+    await page.waitForTimeout(300);
+    await page.click('#privacy_policy', { timeout: 30000 });
+    await page.waitForTimeout(Math.random() * 2000 + 1500); // Pause before submitting
 
     await page.screenshot({ path: `/tmp/kijiji-before-submit-${accountNum}.png` });
 
-    // Step 3: Submit with longer timeout
+    // Move mouse to submit button slowly
+    await page.mouse.move(540, 900, { steps: 25 });
+    await page.waitForTimeout(Math.random() * 1000 + 800);
+
+    // Step 3: Submit
     console.log(`[${accountNum}/${total}] Submitting...`);
     await page.click('button:has-text("Sign Up")', { timeout: 30000 });
     await page.waitForTimeout(5000);
