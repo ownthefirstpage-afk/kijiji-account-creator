@@ -191,41 +191,31 @@ async function createKijijiAccount(browser, account, accountNum, total) {
 
   try {
     // Step 1: Go to Kijiji registration
-    await page.goto('https://www.kijiji.ca/t-signup.html', { waitUntil: 'networkidle', timeout: 30000 });
+    await page.goto('https://www.kijiji.ca/register/personal', { waitUntil: 'networkidle', timeout: 30000 });
     await page.waitForTimeout(2000);
 
     // Step 2: Fill registration form
     console.log(`[${accountNum}/${total}] Filling registration form...`);
 
+    // Full name
+    await page.fill('input[placeholder="Full name"], input[name*="name" i], #fullName', `${username.split('.')[0]} ${username.split('.')[1]}`, { timeout: 10000 });
+    await page.waitForTimeout(500);
+
     // Email
-    await page.fill('input[type="email"], input[name="email"], #email', email, { timeout: 10000 });
+    await page.fill('input[placeholder="Email"], input[type="email"], input[name*="email" i]', email, { timeout: 10000 });
     await page.waitForTimeout(500);
 
     // Password
-    await page.fill('input[type="password"], input[name="password"], #password', password, { timeout: 10000 });
+    await page.fill('input[placeholder="New password"], input[name*="password" i]:not([placeholder*="Confirm"])', password, { timeout: 10000 });
     await page.waitForTimeout(500);
 
-    // Nickname/username
-    const nicknameField = await page.$('input[name="nickname"], input[name="displayName"], #nickname');
-    if (nicknameField) {
-      await nicknameField.fill(username);
-      await page.waitForTimeout(500);
-    }
+    // Confirm password
+    await page.fill('input[placeholder="Confirm your password"], input[placeholder*="Confirm"]', password, { timeout: 10000 });
+    await page.waitForTimeout(500);
 
-    // Location/City
-    const locationField = await page.$('input[name="location"], input[placeholder*="location" i], #location');
-    if (locationField) {
-      await locationField.fill(city.name);
-      await page.waitForTimeout(1000);
-      // Try to select from dropdown
-      await page.keyboard.press('ArrowDown');
-      await page.keyboard.press('Enter');
-      await page.waitForTimeout(500);
-    }
-
-    // Accept terms
-    const checkbox = await page.$('input[type="checkbox"]');
-    if (checkbox) {
+    // Check both checkboxes
+    const checkboxes = await page.$$('input[type="checkbox"]');
+    for (const checkbox of checkboxes) {
       await checkbox.check();
       await page.waitForTimeout(300);
     }
@@ -234,10 +224,10 @@ async function createKijijiAccount(browser, account, accountNum, total) {
 
     // Step 3: Submit
     console.log(`[${accountNum}/${total}] Submitting...`);
-    const submitBtn = await page.$('button[type="submit"], input[type="submit"], button:has-text("Sign Up"), button:has-text("Register")');
+    const submitBtn = await page.$('button:has-text("Sign Up"), button[type="submit"]');
     if (submitBtn) {
       await submitBtn.click();
-      await page.waitForTimeout(3000);
+      await page.waitForTimeout(5000);
     }
 
     await page.screenshot({ path: `/tmp/kijiji-after-submit-${accountNum}.png` });
