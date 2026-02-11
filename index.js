@@ -343,6 +343,35 @@ app.post('/create', async (req, res) => {
   });
 });
 
+// INSPECT ENDPOINT - dumps Kijiji signup page structure
+app.get('/inspect', async (req, res) => {
+  const browser = await chromium.launch({ headless: true, args: ['--no-sandbox','--disable-setuid-sandbox'] });
+  const page = await browser.newPage();
+  try {
+    await page.goto('https://www.kijiji.ca/t-signup.html', { waitUntil: 'networkidle', timeout: 30000 });
+    await page.waitForTimeout(3000);
+    
+    const inputs = await page.evaluate(() => {
+      return Array.from(document.querySelectorAll('input, select, button, textarea')).map(el => ({
+        tag: el.tagName,
+        type: el.type || '',
+        name: el.name || '',
+        id: el.id || '',
+        placeholder: el.placeholder || '',
+        class: el.className || '',
+        'data-testid': el.getAttribute('data-testid') || '',
+        'aria-label': el.getAttribute('aria-label') || ''
+      }));
+    });
+    
+    await browser.close();
+    res.json({ url: page.url(), inputs });
+  } catch(e) {
+    await browser.close();
+    res.json({ error: e.message });
+  }
+});
+
 app.get('/health', (_, res) => res.json({ 
   ok: true, 
   service: 'Kijiji Account Creator', 
