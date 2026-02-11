@@ -212,30 +212,48 @@ async function createKijijiAccount(browser, account, accountNum, total) {
     }
     await page.waitForTimeout(3000);
 
-    // Step 2: Fill registration form with EXACT IDs
+    // Step 2: Fill registration form with EXACT IDs and HUMAN-LIKE behavior
     console.log(`[${accountNum}/${total}] Filling registration form...`);
 
+    // Helper: Type like a human
+    async function humanType(selector, text) {
+      await page.click(selector);
+      await page.waitForTimeout(Math.random() * 300 + 100);
+      for (const char of text) {
+        await page.keyboard.type(char);
+        await page.waitForTimeout(Math.random() * 150 + 50); // 50-200ms per char
+      }
+    }
+
     // Full name - ID: name
-    await page.fill('#name', `${username.split('.')[0]} ${username.split('.')[1]}`, { timeout: 10000 });
-    await page.waitForTimeout(500);
+    await humanType('#name', `${username.split('.')[0]} ${username.split('.')[1]}`);
+    await page.waitForTimeout(Math.random() * 800 + 400);
 
     // Email - ID: email
-    await page.fill('#email', email, { timeout: 10000 });
-    await page.waitForTimeout(500);
+    await humanType('#email', email);
+    await page.waitForTimeout(Math.random() * 800 + 400);
 
     // Password - ID: new_password
-    await page.fill('#new_password', password, { timeout: 10000 });
-    await page.waitForTimeout(500);
+    await humanType('#new_password', password);
+    await page.waitForTimeout(Math.random() * 800 + 400);
 
     // Confirm password - ID: reenter_password
-    await page.fill('#reenter_password', password, { timeout: 10000 });
-    await page.waitForTimeout(500);
+    await humanType('#reenter_password', password);
+    await page.waitForTimeout(Math.random() * 800 + 400);
+
+    // Move mouse around a bit
+    await page.mouse.move(Math.random() * 500 + 200, Math.random() * 300 + 100);
+    await page.waitForTimeout(Math.random() * 500 + 300);
 
     // Check both checkboxes by ID
-    await page.check('#terms_of_use');
-    await page.waitForTimeout(300);
-    await page.check('#privacy_policy');
-    await page.waitForTimeout(300);
+    await page.click('#terms_of_use');
+    await page.waitForTimeout(Math.random() * 600 + 300);
+    
+    await page.mouse.move(Math.random() * 500 + 200, Math.random() * 300 + 200);
+    await page.waitForTimeout(Math.random() * 400 + 200);
+    
+    await page.click('#privacy_policy');
+    await page.waitForTimeout(Math.random() * 800 + 400);
 
     await page.screenshot({ path: `/tmp/kijiji-before-submit-${accountNum}.png` });
 
