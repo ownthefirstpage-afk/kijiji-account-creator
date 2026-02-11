@@ -333,29 +333,31 @@ app.post('/create', async (req, res) => {
   });
 });
 
-// INSPECT ENDPOINT - dumps Kijiji signup page structure
+// INSPECT ENDPOINT - dumps Kijiji signup page structure (no auth needed)
 app.get('/inspect', async (req, res) => {
   const browser = await chromium.launch({ headless: true, args: ['--no-sandbox','--disable-setuid-sandbox'] });
-  const page = await browser.newPage();
+  const context = await browser.newContext({
+    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36'
+  });
+  const page = await context.newPage();
   try {
-    await page.goto('https://www.kijiji.ca/t-signup.html', { waitUntil: 'networkidle', timeout: 30000 });
+    await page.goto('https://www.kijiji.ca/register/personal', { waitUntil: 'networkidle', timeout: 30000 });
     await page.waitForTimeout(3000);
     
     const inputs = await page.evaluate(() => {
-      return Array.from(document.querySelectorAll('input, select, button, textarea')).map(el => ({
-        tag: el.tagName,
+      return Array.from(document.querySelectorAll('input')).map(el => ({
         type: el.type || '',
         name: el.name || '',
         id: el.id || '',
         placeholder: el.placeholder || '',
-        class: el.className || '',
-        'data-testid': el.getAttribute('data-testid') || '',
-        'aria-label': el.getAttribute('aria-label') || ''
+        value: el.value || '',
+        visible: el.offsetParent !== null,
+        outerHTML: el.outerHTML.substring(0, 150)
       }));
     });
     
     await browser.close();
-    res.json({ url: page.url(), inputs });
+    res.json({ url: page.url(), inputs: inputs.filter(i => i.visible) });
   } catch(e) {
     await browser.close();
     res.json({ error: e.message });
