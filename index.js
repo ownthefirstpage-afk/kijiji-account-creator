@@ -250,25 +250,22 @@ async function createKijijiAccount(browser, account, accountNum, total) {
     await page.mouse.move(Math.random() * 500 + 200, Math.random() * 300 + 100);
     await page.waitForTimeout(Math.random() * 500 + 300);
 
-    // Check both checkboxes by ID
-    await page.click('#terms_of_use');
+    // Check both checkboxes by ID with longer timeout
+    await page.click('#terms_of_use', { timeout: 30000, force: true });
     await page.waitForTimeout(Math.random() * 600 + 300);
     
     await page.mouse.move(Math.random() * 500 + 200, Math.random() * 300 + 200);
     await page.waitForTimeout(Math.random() * 400 + 200);
     
-    await page.click('#privacy_policy');
+    await page.click('#privacy_policy', { timeout: 30000, force: true });
     await page.waitForTimeout(Math.random() * 800 + 400);
 
     await page.screenshot({ path: `/tmp/kijiji-before-submit-${accountNum}.png` });
 
-    // Step 3: Submit
+    // Step 3: Submit with longer timeout
     console.log(`[${accountNum}/${total}] Submitting...`);
-    const submitBtn = await page.$('button:has-text("Sign Up"), button[type="submit"]');
-    if (submitBtn) {
-      await submitBtn.click();
-      await page.waitForTimeout(5000);
-    }
+    await page.click('button:has-text("Sign Up")', { timeout: 30000 });
+    await page.waitForTimeout(5000);
 
     await page.screenshot({ path: `/tmp/kijiji-after-submit-${accountNum}.png` });
 
