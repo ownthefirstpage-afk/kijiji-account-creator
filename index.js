@@ -188,7 +188,12 @@ async function createKijijiAccount(browser, account, accountNum, total) {
     locale: 'en-CA',
     timezoneId: 'America/Toronto',
     geolocation: { latitude: city.lat, longitude: city.lng },
-    permissions: ['geolocation']
+    permissions: ['geolocation'],
+    proxy: {
+      server: `http://87.98.97.71:59100`,
+      username: 'ctghotrod',
+      password: 'eM6CQata5X'
+    }
   });
 
   const page = await context.newPage();
