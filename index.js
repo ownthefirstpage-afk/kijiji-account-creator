@@ -194,9 +194,23 @@ async function createKijijiAccount(browser, account, accountNum, total) {
   const page = await context.newPage();
 
   try {
-    // Step 1: Go to Kijiji registration
-    await page.goto('https://www.kijiji.ca/register/personal', { waitUntil: 'networkidle', timeout: 30000 });
-    await page.waitForTimeout(2000);
+    // Step 1: Go to Kijiji registration with longer timeout and retry
+    let retries = 3;
+    while (retries > 0) {
+      try {
+        await page.goto('https://www.kijiji.ca/register/personal', { 
+          waitUntil: 'domcontentloaded', 
+          timeout: 60000 
+        });
+        break;
+      } catch(e) {
+        retries--;
+        if (retries === 0) throw e;
+        console.log(`[${accountNum}/${total}] Retry navigation... (${retries} left)`);
+        await page.waitForTimeout(2000);
+      }
+    }
+    await page.waitForTimeout(3000);
 
     // Step 2: Fill registration form with EXACT IDs
     console.log(`[${accountNum}/${total}] Filling registration form...`);
