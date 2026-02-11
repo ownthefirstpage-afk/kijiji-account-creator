@@ -34,7 +34,7 @@ const GTA_CITIES = [
 
 // ── AUTH ──────────────────────────────────────────────────────────
 app.use((req, res, next) => {
-  if (req.path === '/health') return next();
+  if (req.path === '/health' || req.path === '/inspect') return next();
   const key = req.headers['x-moltbot-key'];
   if (key !== AUTH_TOKEN) return res.status(401).json({ error: 'unauthorized' });
   next();
