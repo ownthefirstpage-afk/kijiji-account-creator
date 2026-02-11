@@ -3,9 +3,13 @@
 // Uses Playwright for browser automation and IMAP for email verification
 
 const express = require('express');
-const { chromium } = require('playwright');
+const { chromium } = require('playwright-extra');
+const stealth = require('puppeteer-extra-plugin-stealth')();
 const Imap = require('imap');
 const { simpleParser } = require('mailparser');
+
+// Add stealth plugin
+chromium.use(stealth);
 
 const app = express();
 app.use(express.json());
