@@ -194,31 +194,30 @@ async function createKijijiAccount(browser, account, accountNum, total) {
     await page.goto('https://www.kijiji.ca/register/personal', { waitUntil: 'networkidle', timeout: 30000 });
     await page.waitForTimeout(2000);
 
-    // Step 2: Fill registration form
+    // Step 2: Fill registration form with EXACT IDs
     console.log(`[${accountNum}/${total}] Filling registration form...`);
 
-    // Full name
-    await page.fill('input[placeholder="Full name"], input[name*="name" i], #fullName', `${username.split('.')[0]} ${username.split('.')[1]}`, { timeout: 10000 });
+    // Full name - ID: name
+    await page.fill('#name', `${username.split('.')[0]} ${username.split('.')[1]}`, { timeout: 10000 });
     await page.waitForTimeout(500);
 
-    // Email
-    await page.fill('input[placeholder="Email"], input[type="email"], input[name*="email" i]', email, { timeout: 10000 });
+    // Email - ID: email
+    await page.fill('#email', email, { timeout: 10000 });
     await page.waitForTimeout(500);
 
-    // Password
-    await page.fill('input[placeholder="New password"], input[name*="password" i]:not([placeholder*="Confirm"])', password, { timeout: 10000 });
+    // Password - ID: new_password
+    await page.fill('#new_password', password, { timeout: 10000 });
     await page.waitForTimeout(500);
 
-    // Confirm password
-    await page.fill('input[placeholder="Confirm your password"], input[placeholder*="Confirm"]', password, { timeout: 10000 });
+    // Confirm password - ID: reenter_password
+    await page.fill('#reenter_password', password, { timeout: 10000 });
     await page.waitForTimeout(500);
 
-    // Check both checkboxes
-    const checkboxes = await page.$$('input[type="checkbox"]');
-    for (const checkbox of checkboxes) {
-      await checkbox.check();
-      await page.waitForTimeout(300);
-    }
+    // Check both checkboxes by ID
+    await page.check('#terms_of_use');
+    await page.waitForTimeout(300);
+    await page.check('#privacy_policy');
+    await page.waitForTimeout(300);
 
     await page.screenshot({ path: `/tmp/kijiji-before-submit-${accountNum}.png` });
 
